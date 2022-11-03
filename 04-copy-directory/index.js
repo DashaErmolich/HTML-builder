@@ -1,4 +1,4 @@
-const fs = require ('fs/promises');
+const fsPromises = require ('fs/promises');
 const path = require('path');
 
 const folderName = 'files';
@@ -11,7 +11,7 @@ copyDir(folderPath, copyOfFolderPath);
 
 async function copyDir(source, target) {
     try {
-        const createDir = await fs.mkdir(target, {recursive: true});
+        const createDir = await fsPromises.mkdir(target, {recursive: true});
         const folderItems = await readFolder(source);
         await copyFolderFiles(folderItems);
     } catch (error) {
@@ -21,7 +21,7 @@ async function copyDir(source, target) {
 
 async function readFolder(folderPath) {
     try {
-        const folderItems = await fs.readdir(folderPath, {withFileTypes: true});
+        const folderItems = await fsPromises.readdir(folderPath, {withFileTypes: true});
         return folderItems;
     } catch (error) {
         console.log(error.message);
@@ -35,7 +35,7 @@ async function copyFolderFiles(folderItems) {
             if (!item.isDirectory()) {
                 const filePath = path.join(folderPath, item.name);
                 const copyOfFilePath = path.join(copyOfFolderPath, item.name);
-                await fs.copyFile(filePath, copyOfFilePath);
+                await fsPromises.copyFile(filePath, copyOfFilePath);
             }
         }
     } catch (error) {

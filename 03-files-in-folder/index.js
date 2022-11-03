@@ -1,4 +1,4 @@
-const fs  = require('fs/promises');
+const fsPromises  = require('fs/promises');
 const path = require('path');
 
 const folderName = 'secret-folder';
@@ -8,7 +8,7 @@ printFilesInfo(folderPath)
 
 async function printFilesInfo(pathToFolder) {
     try {
-        const folderItems = await fs.readdir(pathToFolder, {withFileTypes: true});
+        const folderItems = await fsPromises.readdir(pathToFolder, {withFileTypes: true});
 
         for (let i = 0; i < folderItems.length; i ++) {
             const item = folderItems[i];
@@ -40,7 +40,7 @@ function getFilePath(pathToFolder, filename) {
 
 async function getFileSize(pathToFile) {
     try {
-        const fileStats = await fs.stat(pathToFile);
+        const fileStats = await fsPromises.stat(pathToFile);
         return fileStats.size;
     } catch (error) {
         console.log(error.message);
