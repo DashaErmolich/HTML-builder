@@ -11,7 +11,13 @@ copyDir(folderPath, copyOfFolderPath);
 
 async function copyDir(source, target) {
     try {
-        const createDir = await fsPromises.mkdir(target, {recursive: true});
+        const isCopyAlreadyExist = await isDirExist(target);
+
+        if (isCopyAlreadyExist) {
+            await fsPromises.rm(target, {recursive: true});
+        }
+
+        await fsPromises.mkdir(target, {recursive: true});
         const folderItems = await readFolder(source);
         await copyFolderFiles(folderItems);
     } catch (error) {
@@ -40,5 +46,14 @@ async function copyFolderFiles(folderItems) {
         }
     } catch (error) {
         console.log(error.message);
+    }
+}
+
+async function isDirExist(path) {
+    try {
+        await fsPromises.access(path, fsPromises.constants.R_OK | fsPromises.constants.W_OK);
+        return true;
+    } catch (error) {
+        return false;
     }
 }
