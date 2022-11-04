@@ -72,18 +72,24 @@ async function readFolder(folderPath) {
 
 async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder, fileName) {
     try {
+        const tmpBundlePath = path.join(targetFolder, `tmp${fileExtension}`);
+        
         for (let i = 0; i < folderItems.length; i ++) {
             const item = folderItems[i];
             const itemExtension = getFileExtension(item.name);
 
             if (!item.isDirectory() && itemExtension === fileExtension) {
-                const filePath = path.join(sourceFolder, item.name)
-                const bundleFilePath = path.join(targetFolder, `${fileName}${fileExtension}`);
-
+                const filePath = path.join(sourceFolder, item.name);
                 const fileReadStream = createReadStream(filePath, encoding);
-                await fsPromises.appendFile(bundleFilePath, fileReadStream, encoding)
+                await fsPromises.appendFile(tmpBundlePath, fileReadStream, encoding);
             }
         }
+
+        const bundleFilePath = path.join(targetFolder, `${fileName}${fileExtension}`);
+        const tmpReadStream = createReadStream(tmpBundlePath, encoding)
+        const bundleWriteStream = createWriteStream(bundleFilePath, encoding);
+        tmpReadStream.pipe(bundleWriteStream);
+        await fsPromises.unlink(tmpBundlePath);
     } catch (error) {
         console.log(error.message);
     }
@@ -159,4 +165,3 @@ async function createPage(template, components, fileExtension) {
 function getFileName(filename, extension) {
     return path.basename(filename, extension);
 }
-
