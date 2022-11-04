@@ -1,12 +1,17 @@
 const fsPromises = require ('fs/promises');
 const path = require('path');
-const { createReadStream } = require('fs');
+const { createReadStream, createWriteStream } = require('fs');
 
 const projectFolderName = 'project-dist';
 const stylesFolderName = 'styles';
+const htmlComponentsFolderName = 'components';
 
 const stylesName = 'style';
 const stylesExtension = '.css';
+
+const htmlName = 'index';
+const htmlExtension = '.html';
+const htmlTemplateName = 'template';
 
 const assetsFolderName = 'assets';
 
@@ -24,6 +29,13 @@ async function buildPage() {
     const assetsPath = getPath(assetsFolderName);
     const copyOfAssetsPath = path.join(projectFolderPath, assetsFolderName);
     await copyDir(assetsPath, copyOfAssetsPath);
+
+    const htmlComponentsFolderPath = getPath(htmlComponentsFolderName);
+    const htmlTemplatePath = getPath(`${htmlTemplateName}${htmlExtension}`);
+    const htmlPage = await createPage(htmlTemplatePath, htmlComponentsFolderPath, htmlExtension);
+    const htmlPath = path.join(projectFolderPath, `${htmlName}${htmlExtension}`)
+    const htmlWriteStream = createWriteStream(htmlPath, encoding);
+    htmlWriteStream.write(htmlPage);
 }
 
 
@@ -109,9 +121,9 @@ async function copyFolderFiles(folderItems, source, target) {
                 const copyOfFilePath = path.join(target, item.name);
                 await fsPromises.copyFile(filePath, copyOfFilePath);
             } else {
-                const folder = path.join(source, item.name)
-                const copy = path.join(target, item.name);
-                copyDir(folder, copy)
+                const innerFolderPath = path.join(source, item.name)
+                const copyOfInnerFolderPath = path.join(target, item.name);
+                copyDir(innerFolderPath, copyOfInnerFolderPath)
             }
         }
     } catch (error) {
@@ -119,7 +131,32 @@ async function copyFolderFiles(folderItems, source, target) {
     }
 }
 
-async function getInnerSource(item, from) {
-    let items = await readFolder(path.join(source, item.name));
-    await copyFolderFiles(items, source, target);
+async function createPage(template, components, fileExtension) {
+    try {
+        const templatePageString = await fsPromises.readFile(template, encoding);
+        let page = templatePageString;
+        const pageComponents = await readFolder(components);
+        const markers = ['header', 'articles', 'footer'];
+        for (let i = 0; i < pageComponents.length; i ++) {
+            const item = pageComponents[i];
+            const itemExtension = getFileExtension(item.name);
+            const itemName = getFileName(item.name, itemExtension);
+
+            if (!item.isDirectory() && itemExtension === fileExtension && markers.includes(itemName)) {
+                const itemPath = path.join(components, item.name);
+                const component = await fsPromises.readFile(itemPath, encoding);
+                const regex = `{{${itemName}}}`;
+                page = page.replace(regex, component);
+            }
+        }
+        return page;
+    } catch (error) {
+        console.log(error.message);
+    }
+
 }
+
+function getFileName(filename, extension) {
+    return path.basename(filename, extension);
+}
+
