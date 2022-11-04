@@ -90,7 +90,9 @@ async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder,
         const tmpReadStream = createReadStream(tmpBundlePath, encoding)
         const bundleWriteStream = createWriteStream(bundleFilePath, encoding);
         tmpReadStream.pipe(bundleWriteStream);
-        await fsPromises.unlink(tmpBundlePath);
+        tmpReadStream.on('end', async () => {
+            await fsPromises.unlink(tmpBundlePath);
+        })
     } catch (error) {
         console.log(error.message);
     }
@@ -143,13 +145,13 @@ async function createPage(template, components, fileExtension) {
         const templatePageString = await fsPromises.readFile(template, encoding);
         let page = templatePageString;
         const pageComponents = await readFolder(components);
-        const markers = ['header', 'articles', 'footer'];
+        const markers = [];
         for (let i = 0; i < pageComponents.length; i ++) {
             const item = pageComponents[i];
             const itemExtension = getFileExtension(item.name);
             const itemName = getFileName(item.name, itemExtension);
 
-            if (!item.isDirectory() && itemExtension === fileExtension && markers.includes(itemName)) {
+            if (!item.isDirectory() && itemExtension === fileExtension) {
                 const itemPath = path.join(components, item.name);
                 const component = await fsPromises.readFile(itemPath, encoding);
                 const regex = `{{${itemName}}}`;

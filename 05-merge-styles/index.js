@@ -53,8 +53,8 @@ async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder,
         const tmpReadStream = createReadStream(tmpBundlePath, encoding)
         const bundleWriteStream = createWriteStream(bundleFilePath, encoding);
         tmpReadStream.pipe(bundleWriteStream);
-        tmpReadStream.on('end', () => {
-            fsPromises.unlink(tmpBundlePath);
+        tmpReadStream.on('end', async () => {
+            await fsPromises.unlink(tmpBundlePath);
         })
         
     } catch (error) {
