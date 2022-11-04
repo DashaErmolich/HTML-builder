@@ -81,6 +81,7 @@ async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder,
             if (!item.isDirectory() && itemExtension === fileExtension) {
                 const filePath = path.join(sourceFolder, item.name);
                 const fileReadStream = createReadStream(filePath, encoding);
+                await fsPromises.appendFile(tmpBundlePath, '\n', encoding);
                 await fsPromises.appendFile(tmpBundlePath, fileReadStream, encoding);
             }
         }
