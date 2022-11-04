@@ -5,8 +5,10 @@ const { createReadStream } = require('fs');
 const projectFolderName = 'project-dist';
 const stylesFolderName = 'styles';
 
-stylesName = 'style';
+const stylesName = 'style';
 const stylesExtension = '.css';
+
+const assetsFolderName = 'assets';
 
 const encoding = 'utf-8';
 
@@ -18,6 +20,10 @@ async function buildPage() {
 
     const stylesFolderPath = getPath(stylesFolderName);
     await createBundle(stylesFolderPath, stylesExtension, projectFolderPath, stylesName);
+
+    const assetsPath = getPath(assetsFolderName);
+    const copyOfAssetsPath = path.join(projectFolderPath, assetsFolderName);
+    await copyDir(assetsPath, copyOfAssetsPath);
 }
 
 
@@ -73,4 +79,47 @@ async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder,
 
 function getFileExtension(filename) {
     return path.extname(filename);
+}
+
+async function copyDir(source, target) {
+    try {
+        await fsPromises.mkdir(target, {recursive: true});
+        const folderItems = await readFolder(source);
+        await copyFolderFiles(folderItems, source, target);
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+async function readFolder(folderPath) {
+    try {
+        const folderItems = await fsPromises.readdir(folderPath, {withFileTypes: true});
+        return folderItems;
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+async function copyFolderFiles(folderItems, source, target) {
+    try {
+        for (let i = 0; i < folderItems.length; i ++) {
+            const item = folderItems[i];
+            if (!item.isDirectory()) {
+                const filePath = path.join(source, item.name);
+                const copyOfFilePath = path.join(target, item.name);
+                await fsPromises.copyFile(filePath, copyOfFilePath);
+            } else {
+                const folder = path.join(source, item.name)
+                const copy = path.join(target, item.name);
+                copyDir(folder, copy)
+            }
+        }
+    } catch (error) {
+        console.log(error.message);
+    }
+}
+
+async function getInnerSource(item, from) {
+    let items = await readFolder(path.join(source, item.name));
+    await copyFolderFiles(items, source, target);
 }
