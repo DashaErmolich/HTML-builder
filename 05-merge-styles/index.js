@@ -1,5 +1,5 @@
 const fsPromises = require ('fs/promises');
-const { createReadStream } = require('fs')
+const { createReadStream, createWriteStream } = require('fs')
 const path = require('path');
 
 const stylesFolderName = 'styles';
@@ -13,12 +13,12 @@ const stylesExtension = '.css';
 
 const encoding = 'utf-8';
 
-createBundle(stylesFolderPath, stylesExtension);
+createBundle(stylesFolderPath, stylesExtension, targetFolderPath, bundleFileName);
 
-async function createBundle(sourceFolder, fileExtension) {
+async function createBundle(sourceFolder, fileExtension, targetFolder, fileName) {
     try {
         const sourceFolderItems = await readFolder(sourceFolder);
-        await readFiles(sourceFolderItems, fileExtension, sourceFolder);
+        await readFiles(sourceFolderItems, fileExtension, sourceFolder, targetFolder, fileName);
     } catch (error) {
         console.log(error.message);
     }
@@ -33,20 +33,29 @@ async function readFolder(folderPath) {
     }
 }
 
-async function readFiles(folderItems, fileExtension, sourceFolder) {
+async function readFiles(folderItems, fileExtension, sourceFolder, targetFolder, fileName) {
     try {
+        const tmpBundlePath = path.join(targetFolder, `tmp${fileExtension}`);
+
         for (let i = 0; i < folderItems.length; i ++) {
             const item = folderItems[i];
             const itemExtension = getFileExtension(item.name);
 
             if (!item.isDirectory() && itemExtension === fileExtension) {
                 const filePath = path.join(sourceFolder, item.name)
-                const bundleFilePath = path.join(targetFolderPath, `${bundleFileName}${stylesExtension}`);
-
                 const fileReadStream = createReadStream(filePath, encoding);
-                await fsPromises.appendFile(bundleFilePath, fileReadStream, encoding)
+                await fsPromises.appendFile(tmpBundlePath, fileReadStream, encoding)
             }
         }
+
+        const bundleFilePath = path.join(targetFolder, `${fileName}${fileExtension}`);
+        const tmpReadStream = createReadStream(tmpBundlePath, encoding)
+        const bundleWriteStream = createWriteStream(bundleFilePath, encoding);
+        tmpReadStream.pipe(bundleWriteStream);
+        tmpReadStream.on('end', () => {
+            fsPromises.unlink(tmpBundlePath);
+        })
+        
     } catch (error) {
         console.log(error.message);
     }
